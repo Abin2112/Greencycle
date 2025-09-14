@@ -25,7 +25,19 @@ const generateToken = (payload) => {
 
 /** REGISTER endpoint (users & NGOs only) */
 app.post("/api/register", async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const {
+    name,
+    email,
+    password,
+    role,
+    phone,
+    address,
+    website,
+    registrationNumber,
+    description,
+    services,
+    operatingAreas
+  } = req.body;
 
   // prevent anyone from registering as admin
   if (role === "admin") {
@@ -40,22 +52,34 @@ app.post("/api/register", async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
 
+    // Insert into users table
     const result = await pool.query(
-  `INSERT INTO users (name, email, role, points, badges, created_at, updated_at)
-   VALUES ($1, $2, $3, 0, ARRAY[]::text[], NOW(), NOW())
-   RETURNING *`,
-  [name, email, role || "user"]
-);
-
-
-    await pool.query(
-      `INSERT INTO auth_credentials (user_id, password_hash) VALUES ($1, $2)`,
-      [result.rows[0].id, hashed]
+      `INSERT INTO users (name, email, role, points, badges, phone, address, created_at, updated_at)
+       VALUES ($1, $2, $3, 0, ARRAY[]::text[], $4, $5, NOW(), NOW())
+       RETURNING *`,
+      [name, email, role || "user", phone, address]
     );
 
-    res.json({ message: "User registered successfully", user: result.rows[0] });
+    const user = result.rows[0];
+
+    // Insert password into auth_credentials
+    await pool.query(
+      `INSERT INTO auth_credentials (user_id, password_hash) VALUES ($1, $2)`,
+      [user.id, hashed]
+    );
+
+    // If NGO, insert into ngos table
+    if (role === "ngo") {
+      await pool.query(
+        `INSERT INTO ngos (user_id, name, description, address, registration_number, website, services, operating_areas, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())`,
+        [user.id, name, description, address, registrationNumber, website, services, operatingAreas]
+      );
+    }
+
+    res.json({ message: "Registration successful", user });
   } catch (err) {
-    console.error(err);
+    console.error("Registration error:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -107,7 +131,6 @@ app.post("/api/admin/login", (req, res) => {
 
   res.status(401).json({ error: "Invalid admin credentials" });
 });
-
 
 /** Middleware: Protect routes */
 const authMiddleware = (roles = []) => {
