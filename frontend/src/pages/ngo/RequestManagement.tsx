@@ -57,11 +57,11 @@ const RequestManagement: React.FC = () => {
     {
       id: '1',
       requestNumber: 'REQ-2024-001',
-      userName: 'John Doe',
-      userEmail: 'john.doe@email.com',
-      userPhone: '+1 (555) 123-4567',
-      address: '123 Main St, Apt 4B',
-      city: 'New York, NY 10001',
+      userName: 'Rajesh Sharma',
+      userEmail: 'rajesh.sharma@email.com',
+      userPhone: '+91 98765 43210',
+      address: '123 Linking Road, Bandra West',
+      city: 'Mumbai, Maharashtra 400050',
       devices: [
         { type: 'Laptop', brand: 'Dell', model: 'XPS 13', condition: 'Good', quantity: 1 },
         { type: 'Mobile Phone', brand: 'iPhone', model: '12 Pro', condition: 'Fair', quantity: 1 }
@@ -76,11 +76,11 @@ const RequestManagement: React.FC = () => {
     {
       id: '2',
       requestNumber: 'REQ-2024-002',
-      userName: 'Sarah Wilson',
-      userEmail: 'sarah.wilson@email.com',
-      userPhone: '+1 (555) 987-6543',
-      address: '456 Oak Avenue',
-      city: 'Brooklyn, NY 11201',
+      userName: 'Priya Patel',
+      userEmail: 'priya.patel@email.com',
+      userPhone: '+91 87654 32109',
+      address: '456 SV Road, Andheri West',
+      city: 'Mumbai, Maharashtra 400058',
       devices: [
         { type: 'Desktop PC', brand: 'HP', model: 'Pavilion', condition: 'Poor', quantity: 1 },
         { type: 'Monitor', brand: 'Samsung', model: '24"', condition: 'Good', quantity: 2 }
@@ -96,11 +96,11 @@ const RequestManagement: React.FC = () => {
     {
       id: '3',
       requestNumber: 'REQ-2024-003',
-      userName: 'Mike Johnson',
-      userEmail: 'mike.johnson@email.com',
-      userPhone: '+1 (555) 456-7890',
-      address: '789 Pine Street',
-      city: 'Queens, NY 11375',
+      userName: 'Arjun Kumar',
+      userEmail: 'arjun.kumar@email.com',
+      userPhone: '+91 76543 21098',
+      address: '789 Carter Road, Bandra',
+      city: 'Mumbai, Maharashtra 400050',
       devices: [
         { type: 'Tablet', brand: 'iPad', model: 'Air 2', condition: 'Excellent', quantity: 1 },
         { type: 'Chargers', brand: 'Various', model: 'Mixed', condition: 'Good', quantity: 5 }
@@ -116,11 +116,11 @@ const RequestManagement: React.FC = () => {
     {
       id: '4',
       requestNumber: 'REQ-2024-004',
-      userName: 'Emily Davis',
-      userEmail: 'emily.davis@email.com',
-      userPhone: '+1 (555) 321-0987',
-      address: '321 Elm Street',
-      city: 'Manhattan, NY 10002',
+      userName: 'Sneha Desai',
+      userEmail: 'sneha.desai@email.com',
+      userPhone: '+91 65432 10987',
+      address: '321 Hill Road, Bandra West',
+      city: 'Mumbai, Maharashtra 400050',
       devices: [
         { type: 'Smartphone', brand: 'Samsung', model: 'Galaxy S20', condition: 'Good', quantity: 2 },
         { type: 'Headphones', brand: 'Sony', model: 'WH-1000XM4', condition: 'Excellent', quantity: 1 }
