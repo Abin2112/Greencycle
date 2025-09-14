@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -6,67 +6,266 @@ import {
   Package, 
   Building2,
   Download,
-  Calendar,
-  Filter,
   RefreshCw,
   Globe,
-  Zap,
   Recycle,
   Target,
-  Activity
+  Activity,
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
+import { adminApiService } from '../../services/adminApi';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+
+// Define proper types
+interface KpiData {
+  label: string;
+  value: string;
+  change: string;
+  changePercent: string;
+  changeType: 'positive' | 'negative' | 'neutral';
+  icon: React.ComponentType<any>;
+  color: string;
+}
+
+interface ChartDataPoint {
+  month: string;
+  users: number;
+  ngos: number;
+}
+
+interface DeviceData {
+  category: string;
+  count: number;
+  percentage: number;
+}
+
+interface ChartData {
+  userGrowth: ChartDataPoint[];
+  deviceProcessing: DeviceData[];
+}
+
+interface RegionalData {
+  region: string;
+  users: number;
+  ngos: number;
+  devices: number;
+}
 
 const AdminAnalytics: React.FC = () => {
+  const { userProfile } = useAuth();
   const [timeRange, setTimeRange] = useState('7d');
-  const [selectedMetric, setSelectedMetric] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
 
-  // KPI data - cleared dummy data
-  const kpiData = [
-    {
-      label: 'Total Users',
-      value: '0',
-      change: '+0',
-      changePercent: '+0%',
-      changeType: 'neutral' as const,
-      icon: Users,
-      color: 'blue'
-    },
-    {
-      label: 'Active NGOs',
-      value: '0',
-      change: '+0',
-      changePercent: '+0%',
-      changeType: 'neutral' as const,
-      icon: Building2,
-      color: 'green'
-    },
-    {
-      label: 'Devices Processed',
-      value: '0',
-      change: '+0',
-      changePercent: '+0%',
-      changeType: 'neutral' as const,
-      icon: Package,
-      color: 'purple'
-    },
-    {
-      label: 'Platform Revenue',
-      value: '$0',
-      change: '+$0',
-      changePercent: '+0%',
-      changeType: 'neutral' as const,
-      icon: TrendingUp,
-      color: 'yellow'
+  const fetchAnalyticsData = async () => {
+    try {
+      setError(null);
+      const [overview, ngoAnalytics] = await Promise.all([
+        adminApiService.getAdminOverview(),
+        adminApiService.getNgoAnalytics()
+      ]);
+
+      setAnalyticsData({
+        overview,
+        ngoAnalytics
+      });
+    } catch (err) {
+      console.error('Failed to fetch analytics data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load analytics data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-  ];
-
-  const chartData = {
-    userGrowth: [],
-    deviceProcessing: []
   };
 
-  const regionalData: any[] = [];
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await fetchAnalyticsData();
+  };
+
+  useEffect(() => {
+    if (userProfile?.role === 'admin') {
+      fetchAnalyticsData();
+    }
+  }, [userProfile]);
+
+  // Check if user is admin
+  if (userProfile && userProfile.role !== 'admin') {
+    return (
+      <div className="p-6 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Access Denied</h2>
+          <p className="text-red-600">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Generate KPI data from API response
+  const getKpiData = (): KpiData[] => {
+    if (!analyticsData) {
+      return [
+        {
+          label: 'Total Users',
+          value: '0',
+          change: '+0',
+          changePercent: '+0%',
+          changeType: 'neutral',
+          icon: Users,
+          color: 'blue'
+        },
+        {
+          label: 'Active NGOs',
+          value: '0',
+          change: '+0',
+          changePercent: '+0%',
+          changeType: 'neutral',
+          icon: Building2,
+          color: 'green'
+        },
+        {
+          label: 'Devices Processed',
+          value: '0',
+          change: '+0',
+          changePercent: '+0%',
+          changeType: 'neutral',
+          icon: Package,
+          color: 'purple'
+        },
+        {
+          label: 'Platform Revenue',
+          value: '$0',
+          change: '+$0',
+          changePercent: '+0%',
+          changeType: 'neutral',
+          icon: TrendingUp,
+          color: 'yellow'
+        }
+      ];
+    }
+
+    const { overview, userAnalytics, ngoAnalytics } = analyticsData;
+
+    return [
+      {
+        label: 'Total Users',
+        value: overview.overview.total_users.toLocaleString(),
+        change: `+${userAnalytics.stats.new_registrations_this_month}`,
+        changePercent: `+${((userAnalytics.stats.new_registrations_this_month / overview.overview.total_users) * 100).toFixed(1)}%`,
+        changeType: userAnalytics.stats.new_registrations_this_month > 0 ? 'positive' : 'neutral',
+        icon: Users,
+        color: 'blue'
+      },
+      {
+        label: 'Active NGOs',
+        value: ngoAnalytics.stats.verified_ngos.toLocaleString(),
+        change: `${ngoAnalytics.stats.pending_verifications} pending`,
+        changePercent: `${((ngoAnalytics.stats.verified_ngos / (ngoAnalytics.stats.verified_ngos + ngoAnalytics.stats.pending_verifications)) * 100).toFixed(1)}%`,
+        changeType: ngoAnalytics.stats.pending_verifications > 5 ? 'negative' : 'positive',
+        icon: Building2,
+        color: 'green'
+      },
+      {
+        label: 'Devices Processed',
+        value: overview.overview.devices_processed.toLocaleString(),
+        change: `${overview.overview.total_devices - overview.overview.devices_processed} pending`,
+        changePercent: `${((overview.overview.devices_processed / overview.overview.total_devices) * 100).toFixed(1)}%`,
+        changeType: (overview.overview.devices_processed / overview.overview.total_devices) > 0.8 ? 'positive' : 'neutral',
+        icon: Package,
+        color: 'purple'
+      },
+      {
+        label: 'Environmental Impact',
+        value: `${(overview.overview.environmental_impact.co2_saved_kg / 1000).toFixed(1)}t CO₂`,
+        change: `${(overview.overview.environmental_impact.water_saved_liters / 1000).toFixed(1)}k L water saved`,
+        changePercent: '+12.3%',
+        changeType: 'positive',
+        icon: TrendingUp,
+        color: 'yellow'
+      }
+    ];
+  };
+
+  // Generate chart data from API response
+  const getChartData = (): ChartData => {
+    if (!analyticsData) {
+      return {
+        userGrowth: [],
+        deviceProcessing: []
+      };
+    }
+
+    const { overview, userAnalytics } = analyticsData;
+
+    // Generate user growth data from monthly_growth
+    const userGrowth: ChartDataPoint[] = overview.monthly_growth.map((item: any) => ({
+      month: new Date(item.month).toLocaleDateString('en', { month: 'short' }),
+      users: item.users,
+      ngos: item.ngos
+    }));
+
+    // Generate device processing data from device_trends
+    const deviceProcessing: DeviceData[] = overview.device_trends.map((item: any) => ({
+      category: item.device_type,
+      count: item.count,
+      percentage: item.percentage
+    }));
+
+    return {
+      userGrowth,
+      deviceProcessing
+    };
+  };
+
+  // Generate regional data from API response
+  const getRegionalData = (): RegionalData[] => {
+    if (!analyticsData) {
+      return [];
+    }
+
+    return analyticsData.overview.regional_data.map((item: any) => ({
+      region: item.state,
+      users: item.user_count,
+      ngos: item.ngo_count,
+      devices: item.device_count
+    }));
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 flex justify-center items-center min-h-96">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Error Loading Analytics</h2>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={handleRefresh}
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const kpiData = getKpiData();
+  const chartData = getChartData();
+  const regionalData = getRegionalData();
 
   const getColorClass = (color: string) => {
     const colors = {
@@ -92,6 +291,19 @@ const AdminAnalytics: React.FC = () => {
           <p className="text-gray-600 mt-1">Comprehensive platform insights and performance metrics</p>
         </div>
         <div className="flex space-x-3">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+            title="Refresh Analytics"
+          >
+            {refreshing ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4 mr-2" />
+            )}
+            Refresh
+          </button>
           <select
             value={timeRange}
             onChange={(e) => setTimeRange(e.target.value)}
@@ -275,31 +487,32 @@ const AdminAnalytics: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {regionalData.map((region, index) => {
-                const totalUsers = regionalData.reduce((sum, r) => sum + r.users, 0);
-                const marketShare = ((region.users / totalUsers) * 100).toFixed(1);
-                
-                return (
-                  <tr key={region.region} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="h-2 w-2 bg-red-500 rounded-full mr-3"></div>
-                        <span className="text-sm font-medium text-gray-900">{region.region}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {region.users.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {region.ngos}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      {region.devices.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
-                          <motion.div
+              {regionalData.length > 0 ? (
+                regionalData.map((region, index) => {
+                  const totalUsers = regionalData.reduce((sum, r) => sum + r.users, 0);
+                  const marketShare = totalUsers > 0 ? ((region.users / totalUsers) * 100).toFixed(1) : '0';
+                  
+                  return (
+                    <tr key={region.region} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="h-2 w-2 bg-red-500 rounded-full mr-3"></div>
+                          <span className="text-sm font-medium text-gray-900">{region.region}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {region.users.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {region.ngos}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {region.devices.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <div className="flex-1 bg-gray-200 rounded-full h-2 mr-2">
+                            <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${marketShare}%` }}
                             transition={{ delay: 1.0 + index * 0.1, duration: 0.8 }}
@@ -311,7 +524,18 @@ const AdminAnalytics: React.FC = () => {
                     </td>
                   </tr>
                 );
-              })}
+              })
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center">
+                    <div className="text-gray-500">
+                      <Globe className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Regional Data</h3>
+                      <p className="text-gray-600">Regional distribution data will appear here</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
