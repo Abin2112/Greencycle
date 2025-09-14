@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { 
   User as FirebaseUser,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
@@ -44,152 +42,127 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Simulated API calls - replace with actual API calls
-  const fetchUserProfile = async (firebaseUser: FirebaseUser, role: string = 'user'): Promise<User | null> => {
-    try {
-      // This would be a real API call
-      // const response = await fetch(`/api/users/profile/${firebaseUser.uid}`);
-      // const userData = await response.json();
-      
-      // Mock user data for now
-      const mockUser: User = {
-        id: firebaseUser.uid,
-        firebaseUid: firebaseUser.uid,
-        name: firebaseUser.displayName || 'User',
-        email: firebaseUser.email || '',
-        role: role as any, // Use the provided role
-        points: 150,
-        badges: ['Eco Warrior', 'First Upload'],
-        profileImage: firebaseUser.photoURL || undefined,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
-      return mockUser;
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      return null;
-    }
-  };
-
+  /** -------------------------
+   * MANUAL LOGIN (Backend)
+   * ------------------------- */
   const login = async (email: string, password: string, role: string = 'user') => {
     try {
       setLoading(true);
-      const result = await signInWithEmailAndPassword(auth, email, password);
-      // Store role in localStorage for persistence
-      localStorage.setItem('userRole', role);
-      const profile = await fetchUserProfile(result.user, role);
-      setUserProfile(profile);
-      toast.success('Successfully logged in!');
+
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Login failed');
+
+      // Save JWT + user info
+      localStorage.setItem('token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
+
+      setUserProfile(result.user);
+      toast.success('Logged in successfully!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to login');
+      toast.error(error.message || 'Login failed');
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  /** -------------------------
+   * MANUAL REGISTER (Backend)
+   * ------------------------- */
   const register = async (email: string, password: string, userData: Partial<User>) => {
     try {
       setLoading(true);
-      const result = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Create user profile in your backend
-      // const response = await fetch('/api/users/create', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     firebaseUid: result.user.uid,
-      //     email: result.user.email,
-      //     ...userData
-      //   })
-      // });
-      
-      const profile = await fetchUserProfile(result.user, userData.role || 'user');
-      setUserProfile(profile);
-      toast.success('Account created successfully!');
+
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: userData.name, email, password, role: userData.role || 'user' }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Registration failed');
+
+      toast.success('Account created!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to create account');
+      toast.error(error.message || 'Failed to register');
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  /** -------------------------
+   * GOOGLE LOGIN (Firebase)
+   * ------------------------- */
   const loginWithGoogle = async (role: string = 'user') => {
     try {
       setLoading(true);
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      // Store role in localStorage for persistence
-      localStorage.setItem('userRole', role);
-      const profile = await fetchUserProfile(result.user, role);
-      setUserProfile(profile);
-      toast.success('Successfully logged in with Google!');
+
+      // Save or update Google user in backend
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: result.user.displayName,
+          email: result.user.email,
+          role,
+        }),
+      });
+
+      const dbUser = await res.json();
+      localStorage.setItem('token', dbUser.token || '');
+      localStorage.setItem('user', JSON.stringify(dbUser.user || result.user));
+
+      setUserProfile(dbUser.user || null);
+      toast.success('Google login successful!');
     } catch (error: any) {
-      toast.error(error.message || 'Failed to login with Google');
+      toast.error(error.message || 'Google login failed');
       throw error;
     } finally {
       setLoading(false);
     }
   };
 
+  /** -------------------------
+   * LOGOUT
+   * ------------------------- */
   const logout = async () => {
     try {
-      await signOut(auth);
+      await signOut(auth); // clears Firebase session if used
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setUserProfile(null);
-      // Clear stored role on logout
-      localStorage.removeItem('userRole');
-      toast.success('Successfully logged out!');
+      toast.success('Logged out');
     } catch (error: any) {
       toast.error(error.message || 'Failed to logout');
-      throw error;
     }
   };
 
   const resetPassword = async (email: string) => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast.success('Password reset email sent!');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to send password reset email');
-      throw error;
-    }
+    await sendPasswordResetEmail(auth, email);
   };
 
   const updateUserProfile = async (data: Partial<User>) => {
-    try {
-      // This would be a real API call
-      // await fetch('/api/users/update', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(data)
-      // });
-      
-      if (userProfile) {
-        setUserProfile({ ...userProfile, ...data });
-      }
-      toast.success('Profile updated successfully!');
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to update profile');
-      throw error;
+    if (userProfile) {
+      setUserProfile({ ...userProfile, ...data });
     }
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
-      if (user) {
-        // Get stored role from localStorage, default to 'user'
-        const storedRole = localStorage.getItem('userRole') || 'user';
-        const profile = await fetchUserProfile(user, storedRole);
-        setUserProfile(profile);
-      } else {
-        setUserProfile(null);
-      }
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) setUserProfile(JSON.parse(storedUser));
       setLoading(false);
     });
-
     return unsubscribe;
   }, []);
 

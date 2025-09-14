@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Eye, EyeOff, Mail, Lock, User, Phone, Leaf, Building2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, User, Phone, Leaf, Building2, UserCheckIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { RegisterFormData } from '../../types';
@@ -25,20 +25,45 @@ const RegisterPage: React.FC = () => {
   const password = watch('password');
 
   const onSubmit = async (data: RegisterFormData) => {
-    try {
-      setIsLoading(true);
-      await registerUser(data.email, data.password, {
-        name: data.name,
-        role: data.role,
-        phone: data.phone,
-      });
-      navigate('/user'); // Default redirect, will be handled by ProtectedRoute
-    } catch (error) {
-      console.error('Registration error:', error);
-    } finally {
-      setIsLoading(false);
+  try {
+    setIsLoading(true);
+
+    const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/register`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: data.name,
+    email: data.email,
+    password: data.password,
+    role: "user",
+    phone: data.phone
+  })
+});
+
+
+    if (!response.ok) {
+      throw new Error("Registration failed");
     }
-  };
+
+    const result = await response.json();
+    console.log("Registration successful:", result);
+
+    // Redirect user based on role
+    if (result.user.role === "ngo") {
+      navigate("/ngo");
+    } else if (result.user.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/user");
+    }
+
+  } catch (error) {
+    console.error("Registration error:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleGoogleSignup = async () => {
     try {
@@ -242,54 +267,7 @@ const RegisterPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Role Selection */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 mb-2">
-                  Account Type
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label className="flex items-center p-3 border border-neutral-200 rounded-xl cursor-pointer hover:bg-neutral-50 transition-colors">
-                    <input
-                      {...register('role', { required: 'Please select an account type' })}
-                      type="radio"
-                      value="user"
-                      className="sr-only"
-                      onChange={() => setValue('role', 'user')}
-                    />
-                    <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 border-2 border-primary-500 rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 bg-primary-500 rounded-full opacity-0 peer-checked:opacity-100 transition-opacity" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-neutral-800">Individual</div>
-                        <div className="text-xs text-neutral-500">Personal use</div>
-                      </div>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-center p-3 border border-neutral-200 rounded-xl cursor-pointer hover:bg-neutral-50 transition-colors">
-                    <input
-                      {...register('role')}
-                      type="radio"
-                      value="ngo"
-                      className="sr-only"
-                      onChange={() => setValue('role', 'ngo')}
-                    />
-                    <div className="flex items-center space-x-3">
-                      <div className="w-4 h-4 border-2 border-primary-500 rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 bg-primary-500 rounded-full opacity-0 peer-checked:opacity-100 transition-opacity" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-neutral-800">NGO</div>
-                        <div className="text-xs text-neutral-500">Organization</div>
-                      </div>
-                    </div>
-                  </label>
-                </div>
-                {errors.role && (
-                  <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
-                )}
-              </div>
+              
 
               {/* Password Field */}
               <div>

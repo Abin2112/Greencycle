@@ -20,16 +20,37 @@ const LoginPage: React.FC = () => {
   } = useForm<LoginFormData>();
 
   const onSubmit = async (data: LoginFormData) => {
-    try {
-      setIsLoading(true);
+  try {
+    setIsLoading(true);
+
+    // ✅ If admin email, hit /api/admin/login
+    if (data.email === process.env.REACT_APP_ADMIN_EMAIL) {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email, password: data.password }),
+      });
+      const result = await res.json();
+
+      if (!res.ok) throw new Error(result.error || 'Admin login failed');
+
+      localStorage.setItem('token', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user));
+
+      navigate('/admin');
+    } else {
+      // ✅ Normal user/NGO login
       await login(data.email, data.password);
-      navigate('/user'); // Default redirect, will be handled by ProtectedRoute
-    } catch (error) {
-      console.error('Login error:', error);
-    } finally {
-      setIsLoading(false);
+      navigate('/');
     }
-  };
+  } catch (error) {
+    console.error('Login error:', error);
+    alert((error as Error).message);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const handleGoogleLogin = async () => {
     try {
@@ -214,7 +235,7 @@ const LoginPage: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Right side - Image/Illustration */}
+      {/* Right side - Illustration */}
       <motion.div 
         initial={{ opacity: 0, x: 100 }}
         animate={{ opacity: 1, x: 0 }}
@@ -235,26 +256,8 @@ const LoginPage: React.FC = () => {
             <p className="text-xl mb-8 opacity-90">
               Join thousands of users making a difference through smart e-waste management
             </p>
-            <div className="grid grid-cols-1 gap-6 max-w-md">
-              <div className="glass-effect rounded-2xl p-6 text-left">
-                <div className="text-3xl font-bold">500L+</div>
-                <div className="text-sm opacity-80">Water Saved</div>
-              </div>
-              <div className="glass-effect rounded-2xl p-6 text-left">
-                <div className="text-3xl font-bold">1.2K+</div>
-                <div className="text-sm opacity-80">Devices Recycled</div>
-              </div>
-              <div className="glass-effect rounded-2xl p-6 text-left">
-                <div className="text-3xl font-bold">45kg</div>
-                <div className="text-sm opacity-80">CO₂ Reduced</div>
-              </div>
-            </div>
           </motion.div>
         </div>
-        
-        {/* Decorative elements */}
-        <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-white/10 rounded-full animate-bounce-soft" />
-        <div className="absolute bottom-1/3 left-1/4 w-20 h-20 bg-white/5 rounded-full animate-bounce-soft" style={{ animationDelay: '1s' }} />
       </motion.div>
     </div>
   );

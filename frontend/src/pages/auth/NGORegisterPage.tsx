@@ -57,36 +57,50 @@ const NGORegisterPage: React.FC = () => {
   };
 
   const onSubmit = async (data: NGORegisterFormData) => {
-    if (data.password !== data.confirmPassword) {
-      return;
-    }
+  if (data.password !== data.confirmPassword) {
+    alert("Passwords do not match");
+    return;
+  }
 
-    try {
-      setIsLoading(true);
-      
-      const userData = {
+  try {
+    setIsLoading(true);
+
+    const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         name: data.organizationName,
         email: data.email,
-        role: 'ngo' as const,
+        password: data.password,
+        role: "ngo",
         phone: data.phone,
         address: data.address,
-        organizationData: {
-          website: data.website,
-          registrationNumber: data.registrationNumber,
-          description: data.description,
-          servicesOffered: selectedServices,
-          operatingAreas: data.operatingAreas
-        }
-      };
+        website: data.website,
+        registrationNumber: data.registrationNumber,
+        description: data.description,
+        services: selectedServices,
+        operatingAreas: data.operatingAreas
+      })
+    });
 
-      await registerUser(data.email, data.password, userData);
-      navigate('/ngo');
-    } catch (error) {
-      console.error('Registration error:', error);
-    } finally {
-      setIsLoading(false);
+    if (!response.ok) {
+      throw new Error("Registration failed");
     }
-  };
+
+    const result = await response.json();
+    console.log("NGO Registration successful:", result);
+
+    // Redirect NGO to their dashboard
+    navigate("/ngo");
+
+  } catch (error) {
+    console.error("Registration error:", error);
+    alert("Something went wrong during registration. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex">

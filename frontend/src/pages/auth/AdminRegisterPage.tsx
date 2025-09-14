@@ -44,40 +44,33 @@ const AdminRegisterPage: React.FC = () => {
     'Operations Management'
   ];
 
-  const onSubmit = async (data: AdminRegisterFormData) => {
-    if (data.password !== data.confirmPassword) {
-      return;
+  const onSubmit = async (data: { email: string; password: string }) => {
+  try {
+    setIsLoading(true);
+
+    const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/admin/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: data.email, password: data.password })
+    });
+
+    if (!response.ok) {
+      throw new Error("Invalid login");
     }
 
-    // Validate admin code (in real app, this would be verified server-side)
-    if (data.adminCode !== 'GREENCYCLE_ADMIN_2025') {
-      alert('Invalid admin access code');
-      return;
-    }
+    const result = await response.json();
+    localStorage.setItem("token", result.token);
 
-    try {
-      setIsLoading(true);
-      
-      const userData = {
-        name: `${data.firstName} ${data.lastName}`,
-        email: data.email,
-        role: 'admin' as const,
-        adminData: {
-          department: data.department,
-          employeeId: data.employeeId,
-          firstName: data.firstName,
-          lastName: data.lastName
-        }
-      };
+    // Redirect admin
+    navigate("/admin");
 
-      await registerUser(data.email, data.password, userData);
-      navigate('/admin');
-    } catch (error) {
-      console.error('Registration error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  } catch (err) {
+    alert("Invalid admin credentials");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex">
