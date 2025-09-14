@@ -20,92 +20,37 @@ const AdminDashboard: React.FC = () => {
   const systemStats = [
     {
       label: 'Total Users',
-      value: '12,847',
-      change: '+324',
-      changeType: 'positive' as const,
+      value: '0',
+      change: '+0',
+      changeType: 'neutral' as const,
       icon: Users
     },
     {
       label: 'Active NGOs',
-      value: '156',
-      change: '+12',
-      changeType: 'positive' as const,
+      value: '0',
+      change: '+0',
+      changeType: 'neutral' as const,
       icon: Building2
     },
     {
       label: 'Devices Processed',
-      value: '45,892',
-      change: '+1,247',
-      changeType: 'positive' as const,
+      value: '0',
+      change: '+0',
+      changeType: 'neutral' as const,
       icon: Package
     },
     {
       label: 'System Health',
-      value: '99.2%',
-      change: '+0.3%',
-      changeType: 'positive' as const,
+      value: '100%',
+      change: '+0%',
+      changeType: 'neutral' as const,
       icon: Activity
     }
   ];
 
-  const recentActivities = [
-    {
-      id: 1,
-      type: 'ngo_registration',
-      title: 'New NGO Registration',
-      description: 'EcoTech Solutions submitted registration for approval',
-      timestamp: '2 hours ago',
-      status: 'pending'
-    },
-    {
-      id: 2,
-      type: 'user_report',
-      title: 'User Report',
-      description: 'Inappropriate content reported by user @johndoe',
-      timestamp: '4 hours ago',
-      status: 'reviewing'
-    },
-    {
-      id: 3,
-      type: 'system_alert',
-      title: 'System Alert',
-      description: 'High server load detected in Region East',
-      timestamp: '6 hours ago',
-      status: 'resolved'
-    },
-    {
-      id: 4,
-      type: 'data_backup',
-      title: 'Data Backup',
-      description: 'Weekly backup completed successfully',
-      timestamp: '1 day ago',
-      status: 'completed'
-    }
-  ];
+  const recentActivities: any[] = [];
 
-  const criticalAlerts = [
-    {
-      id: 1,
-      level: 'high',
-      title: 'Pending NGO Approvals',
-      description: '8 NGO registrations awaiting admin review',
-      action: 'Review Now'
-    },
-    {
-      id: 2,
-      level: 'medium',
-      title: 'Server Maintenance',
-      description: 'Scheduled maintenance in 2 days',
-      action: 'View Details'
-    },
-    {
-      id: 3,
-      level: 'low',
-      title: 'User Feedback',
-      description: '23 new user feedback submissions',
-      action: 'View Feedback'
-    }
-  ];
+  const criticalAlerts: any[] = [];
 
   const getAlertColor = (level: string) => {
     switch (level) {
@@ -181,7 +126,9 @@ const AdminDashboard: React.FC = () => {
                 <span className={`text-sm font-medium px-2 py-1 rounded-full ${
                   stat.changeType === 'positive' 
                     ? 'text-green-600 bg-green-100' 
-                    : 'text-red-600 bg-red-100'
+                    : stat.changeType === 'negative'
+                    ? 'text-red-600 bg-red-100'
+                    : 'text-gray-600 bg-gray-100'
                 }`}>
                   {stat.change}
                 </span>
@@ -212,23 +159,31 @@ const AdminDashboard: React.FC = () => {
           </div>
           
           <div className="space-y-4">
-            {criticalAlerts.map((alert) => (
-              <div key={alert.id} className={`p-4 border rounded-xl ${getAlertColor(alert.level)}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold">{alert.title}</h3>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    alert.level === 'high' ? 'bg-red-200' : 
-                    alert.level === 'medium' ? 'bg-yellow-200' : 'bg-blue-200'
-                  }`}>
-                    {alert.level.toUpperCase()}
-                  </span>
+            {criticalAlerts.length > 0 ? (
+              criticalAlerts.map((alert) => (
+                <div key={alert.id} className={`p-4 border rounded-xl ${getAlertColor(alert.level)}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold">{alert.title}</h3>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      alert.level === 'high' ? 'bg-red-200' : 
+                      alert.level === 'medium' ? 'bg-yellow-200' : 'bg-blue-200'
+                    }`}>
+                      {alert.level.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="text-sm mb-3">{alert.description}</p>
+                  <button className="text-sm font-medium hover:underline">
+                    {alert.action} →
+                  </button>
                 </div>
-                <p className="text-sm mb-3">{alert.description}</p>
-                <button className="text-sm font-medium hover:underline">
-                  {alert.action} →
-                </button>
+              ))
+            ) : (
+              <div className="text-center text-gray-500 py-8">
+                <AlertTriangle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Critical Alerts</h3>
+                <p className="text-gray-600">All systems are running smoothly</p>
               </div>
-            ))}
+            )}
           </div>
         </motion.div>
 
@@ -247,23 +202,31 @@ const AdminDashboard: React.FC = () => {
           </div>
           
           <div className="space-y-4">
-            {recentActivities.map((activity) => (
-              <div key={activity.id} className="flex items-start p-4 border border-gray-200 rounded-xl hover:border-red-300 transition-colors">
-                <div className="bg-gray-100 p-2 rounded-lg mr-3 mt-1">
-                  {getActivityIcon(activity.type)}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-gray-900">{activity.title}</h3>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}>
-                      {activity.status.toUpperCase()}
-                    </span>
+            {recentActivities.length > 0 ? (
+              recentActivities.map((activity) => (
+                <div key={activity.id} className="flex items-start p-4 border border-gray-200 rounded-xl hover:border-red-300 transition-colors">
+                  <div className="bg-gray-100 p-2 rounded-lg mr-3 mt-1">
+                    {getActivityIcon(activity.type)}
                   </div>
-                  <p className="text-gray-600 text-sm mb-2">{activity.description}</p>
-                  <span className="text-gray-500 text-xs">{activity.timestamp}</span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-gray-900">{activity.title}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}>
+                        {activity.status.toUpperCase()}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-2">{activity.description}</p>
+                    <span className="text-gray-500 text-xs">{activity.timestamp}</span>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-500 py-8">
+                <Activity className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Recent Activity</h3>
+                <p className="text-gray-600">System activity will appear here</p>
               </div>
-            ))}
+            )}
           </div>
         </motion.div>
       </div>
