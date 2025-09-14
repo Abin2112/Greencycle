@@ -21,72 +21,52 @@ const AdminAnalytics: React.FC = () => {
   const [timeRange, setTimeRange] = useState('7d');
   const [selectedMetric, setSelectedMetric] = useState('all');
 
-  // Mock data - in real app, this would come from API
+  // KPI data - cleared dummy data
   const kpiData = [
     {
       label: 'Total Users',
-      value: '12,847',
-      change: '+1,234',
-      changePercent: '+10.6%',
-      changeType: 'positive' as const,
+      value: '0',
+      change: '+0',
+      changePercent: '+0%',
+      changeType: 'neutral' as const,
       icon: Users,
       color: 'blue'
     },
     {
       label: 'Active NGOs',
-      value: '156',
-      change: '+12',
-      changePercent: '+8.3%',
-      changeType: 'positive' as const,
+      value: '0',
+      change: '+0',
+      changePercent: '+0%',
+      changeType: 'neutral' as const,
       icon: Building2,
       color: 'green'
     },
     {
       label: 'Devices Processed',
-      value: '45,892',
-      change: '+3,247',
-      changePercent: '+7.6%',
-      changeType: 'positive' as const,
+      value: '0',
+      change: '+0',
+      changePercent: '+0%',
+      changeType: 'neutral' as const,
       icon: Package,
       color: 'purple'
     },
     {
       label: 'Platform Revenue',
-      value: '$89,456',
-      change: '+$12,345',
-      changePercent: '+16.0%',
-      changeType: 'positive' as const,
+      value: '$0',
+      change: '+$0',
+      changePercent: '+0%',
+      changeType: 'neutral' as const,
       icon: TrendingUp,
       color: 'yellow'
     }
   ];
 
   const chartData = {
-    userGrowth: [
-      { month: 'Jan', users: 8500, ngos: 120 },
-      { month: 'Feb', users: 9200, ngos: 128 },
-      { month: 'Mar', users: 9800, ngos: 135 },
-      { month: 'Apr', users: 10500, ngos: 142 },
-      { month: 'May', users: 11200, ngos: 148 },
-      { month: 'Jun', users: 11900, ngos: 152 },
-      { month: 'Jul', users: 12400, ngos: 156 }
-    ],
-    deviceProcessing: [
-      { category: 'Smartphones', count: 15420, percentage: 34 },
-      { category: 'Laptops', count: 11280, percentage: 25 },
-      { category: 'Tablets', count: 7890, percentage: 17 },
-      { category: 'Desktops', count: 6320, percentage: 14 },
-      { category: 'Other', count: 4982, percentage: 10 }
-    ]
+    userGrowth: [],
+    deviceProcessing: []
   };
 
-  const regionalData = [
-    { region: 'North America', users: 5420, ngos: 67, devices: 18450 },
-    { region: 'Europe', users: 3280, ngos: 42, devices: 12340 },
-    { region: 'Asia Pacific', users: 2890, ngos: 28, devices: 9870 },
-    { region: 'Latin America', users: 890, ngos: 12, devices: 3420 },
-    { region: 'Africa', users: 367, ngos: 7, devices: 1812 }
-  ];
+  const regionalData: any[] = [];
 
   const getColorClass = (color: string) => {
     const colors = {
@@ -152,7 +132,9 @@ const AdminAnalytics: React.FC = () => {
                 <span className={`text-sm font-medium px-2 py-1 rounded-full ${
                   kpi.changeType === 'positive' 
                     ? 'text-green-600 bg-green-100' 
-                    : 'text-red-600 bg-red-100'
+                    : kpi.changeType === 'negative'
+                    ? 'text-red-600 bg-red-100'
+                    : 'text-gray-600 bg-gray-100'
                 }`}>
                   {kpi.changePercent}
                 </span>
@@ -188,21 +170,31 @@ const AdminAnalytics: React.FC = () => {
           </div>
           
           <div className="h-64 flex items-end space-x-4 mb-4">
-            {chartData.userGrowth.map((data, index) => (
-              <div key={data.month} className="flex-1 flex flex-col items-center">
-                <div className="w-full flex flex-col justify-end h-48 space-y-1">
-                  <div 
-                    className="bg-red-500 rounded-t"
-                    style={{ height: `${(data.users / 13000) * 100}%` }}
-                  ></div>
-                  <div 
-                    className="bg-blue-500 rounded-t"
-                    style={{ height: `${(data.ngos / 160) * 30}%` }}
-                  ></div>
+            {chartData.userGrowth.length > 0 ? (
+              chartData.userGrowth.map((data, index) => (
+                <div key={data.month} className="flex-1 flex flex-col items-center">
+                  <div className="w-full flex flex-col justify-end h-48 space-y-1">
+                    <div 
+                      className="bg-red-500 rounded-t"
+                      style={{ height: `${(data.users / 13000) * 100}%` }}
+                    ></div>
+                    <div 
+                      className="bg-blue-500 rounded-t"
+                      style={{ height: `${(data.ngos / 160) * 30}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-xs text-gray-600 mt-2">{data.month}</span>
                 </div>
-                <span className="text-xs text-gray-600 mt-2">{data.month}</span>
+              ))
+            ) : (
+              <div className="w-full flex items-center justify-center h-48">
+                <div className="text-center text-gray-500">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Growth Data</h3>
+                  <p className="text-gray-600">User and NGO growth data will appear here</p>
+                </div>
               </div>
-            ))}
+            )}
           </div>
         </motion.div>
 
@@ -216,25 +208,33 @@ const AdminAnalytics: React.FC = () => {
           <h2 className="text-xl font-bold text-gray-900 mb-6">Device Categories</h2>
           
           <div className="space-y-4">
-            {chartData.deviceProcessing.map((device, index) => (
-              <div key={device.category} className="flex items-center">
-                <div className="w-24 text-sm text-gray-600">{device.category}</div>
-                <div className="flex-1 mx-4">
-                  <div className="bg-gray-200 rounded-full h-3">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${device.percentage}%` }}
-                      transition={{ delay: 0.8 + index * 0.1, duration: 0.8 }}
-                      className="bg-gradient-to-r from-red-500 to-red-600 h-3 rounded-full"
-                    ></motion.div>
+            {chartData.deviceProcessing.length > 0 ? (
+              chartData.deviceProcessing.map((device, index) => (
+                <div key={device.category} className="flex items-center">
+                  <div className="w-24 text-sm text-gray-600">{device.category}</div>
+                  <div className="flex-1 mx-4">
+                    <div className="bg-gray-200 rounded-full h-3">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${device.percentage}%` }}
+                        transition={{ delay: 0.8 + index * 0.1, duration: 0.8 }}
+                        className="bg-gradient-to-r from-red-500 to-red-600 h-3 rounded-full"
+                      ></motion.div>
+                    </div>
+                  </div>
+                  <div className="w-20 text-right">
+                    <div className="text-sm font-medium text-gray-900">{device.count.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500">{device.percentage}%</div>
                   </div>
                 </div>
-                <div className="w-20 text-right">
-                  <div className="text-sm font-medium text-gray-900">{device.count.toLocaleString()}</div>
-                  <div className="text-xs text-gray-500">{device.percentage}%</div>
-                </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-500 py-8">
+                <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Device Data</h3>
+                <p className="text-gray-600">Device processing data will appear here</p>
               </div>
-            ))}
+            )}
           </div>
         </motion.div>
       </div>

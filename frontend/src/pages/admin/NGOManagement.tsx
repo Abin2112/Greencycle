@@ -43,84 +43,8 @@ const NGOManagement: React.FC = () => {
   const [selectedNGOs, setSelectedNGOs] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
 
-  // Mock data - in real app, this would come from API
-  const ngos: NGO[] = [
-    {
-      id: '1',
-      name: 'EcoRecycle Solutions',
-      email: 'contact@ecorecycle.org',
-      phone: '+1 (555) 123-4567',
-      registrationNumber: 'NGO-2023-001',
-      status: 'active',
-      joinDate: '2023-01-15',
-      lastActive: '2 hours ago',
-      devicesProcessed: 1247,
-      location: 'San Francisco, CA',
-      services: ['Device Collection', 'Data Destruction', 'Refurbishment'],
-      contactPerson: 'Sarah Johnson',
-      certifications: ['ISO 14001', 'R2 Certified']
-    },
-    {
-      id: '2',
-      name: 'GreenTech Initiative',
-      email: 'admin@greentech.com',
-      phone: '+1 (555) 987-6543',
-      registrationNumber: 'NGO-2024-012',
-      status: 'pending',
-      joinDate: '2024-09-01',
-      lastActive: '1 day ago',
-      devicesProcessed: 0,
-      location: 'Austin, TX',
-      services: ['Device Collection', 'Recycling'],
-      contactPerson: 'Mike Chen',
-      certifications: ['Pending Review']
-    },
-    {
-      id: '3',
-      name: 'Digital Waste Warriors',
-      email: 'info@digitalwarriors.org',
-      phone: '+1 (555) 456-7890',
-      registrationNumber: 'NGO-2023-087',
-      status: 'active',
-      joinDate: '2023-08-20',
-      lastActive: '5 minutes ago',
-      devicesProcessed: 892,
-      location: 'New York, NY',
-      services: ['Device Collection', 'Education Programs', 'Data Destruction'],
-      contactPerson: 'Emma Rodriguez',
-      certifications: ['ISO 14001', 'NAID AAA']
-    },
-    {
-      id: '4',
-      name: 'TechCycle Foundation',
-      email: 'hello@techcycle.org',
-      phone: '+1 (555) 321-0987',
-      registrationNumber: 'NGO-2024-003',
-      status: 'rejected',
-      joinDate: '2024-03-10',
-      lastActive: '2 weeks ago',
-      devicesProcessed: 0,
-      location: 'Los Angeles, CA',
-      services: ['Device Collection'],
-      contactPerson: 'David Kim',
-      certifications: ['None']
-    },
-    {
-      id: '5',
-      name: 'Planet Protectors NGO',
-      email: 'contact@planetprotectors.org',
-      phone: '+1 (555) 654-3210',
-      registrationNumber: 'NGO-2023-156',
-      status: 'suspended',
-      joinDate: '2023-11-05',
-      lastActive: '1 month ago',
-      devicesProcessed: 423,
-      location: 'Seattle, WA',
-      services: ['Device Collection', 'Recycling', 'Refurbishment'],
-      contactPerson: 'Lisa Thompson',
-      certifications: ['R2 Certified']
-    }
-  ];
+  // NGO data - cleared dummy data
+  const ngos: NGO[] = [];
 
   const filteredNGOs = ngos.filter(ngo => {
     const matchesSearch = ngo.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -216,7 +140,7 @@ const NGOManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-gray-600 text-sm">Total NGOs</p>
-              <p className="text-2xl font-bold text-gray-900">156</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
             </div>
           </div>
         </div>
@@ -227,7 +151,7 @@ const NGOManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-gray-600 text-sm">Active NGOs</p>
-              <p className="text-2xl font-bold text-gray-900">142</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
             </div>
           </div>
         </div>
@@ -238,7 +162,7 @@ const NGOManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-gray-600 text-sm">Pending</p>
-              <p className="text-2xl font-bold text-gray-900">8</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
             </div>
           </div>
         </div>
@@ -249,7 +173,7 @@ const NGOManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-gray-600 text-sm">Suspended</p>
-              <p className="text-2xl font-bold text-gray-900">6</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
             </div>
           </div>
         </div>

@@ -37,64 +37,8 @@ const UserManagement: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  // Mock data - in real app, this would come from API
-  const users: User[] = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@email.com',
-      role: 'user',
-      status: 'active',
-      joinDate: '2024-01-15',
-      lastActive: '2 hours ago',
-      devicesSubmitted: 12,
-      location: 'New York, NY'
-    },
-    {
-      id: '2',
-      name: 'EcoRecycle NGO',
-      email: 'contact@ecorecycle.org',
-      role: 'ngo',
-      status: 'active',
-      joinDate: '2023-11-20',
-      lastActive: '1 day ago',
-      devicesSubmitted: 847,
-      location: 'San Francisco, CA'
-    },
-    {
-      id: '3',
-      name: 'Sarah Wilson',
-      email: 'sarah.wilson@email.com',
-      role: 'user',
-      status: 'pending',
-      joinDate: '2024-09-10',
-      lastActive: '5 minutes ago',
-      devicesSubmitted: 3,
-      location: 'Los Angeles, CA'
-    },
-    {
-      id: '4',
-      name: 'Mike Johnson',
-      email: 'mike.johnson@email.com',
-      role: 'user',
-      status: 'banned',
-      joinDate: '2024-03-05',
-      lastActive: '2 weeks ago',
-      devicesSubmitted: 8,
-      location: 'Chicago, IL'
-    },
-    {
-      id: '5',
-      name: 'GreenTech Solutions',
-      email: 'admin@greentech.com',
-      role: 'ngo',
-      status: 'active',
-      joinDate: '2023-08-12',
-      lastActive: '3 hours ago',
-      devicesSubmitted: 1247,
-      location: 'Austin, TX'
-    }
-  ];
+  // Users data - cleared dummy data
+  const users: User[] = [];
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -187,7 +131,7 @@ const UserManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-gray-600 text-sm">Total Users</p>
-              <p className="text-2xl font-bold text-gray-900">12,847</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
             </div>
           </div>
         </div>
@@ -198,7 +142,7 @@ const UserManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-gray-600 text-sm">Active Users</p>
-              <p className="text-2xl font-bold text-gray-900">11,234</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
             </div>
           </div>
         </div>
@@ -209,7 +153,7 @@ const UserManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-gray-600 text-sm">Pending</p>
-              <p className="text-2xl font-bold text-gray-900">89</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
             </div>
           </div>
         </div>
@@ -220,7 +164,7 @@ const UserManagement: React.FC = () => {
             </div>
             <div className="ml-4">
               <p className="text-gray-600 text-sm">Banned</p>
-              <p className="text-2xl font-bold text-gray-900">43</p>
+              <p className="text-2xl font-bold text-gray-900">0</p>
             </div>
           </div>
         </div>
@@ -323,7 +267,8 @@ const UserManagement: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <input
@@ -381,7 +326,27 @@ const UserManagement: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
+              ))
+              ) : (
+                <tr>
+                  <td colSpan={7} className="px-6 py-12 text-center">
+                    <div className="text-gray-500">
+                      <Users className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No Users Found</h3>
+                      <p className="text-gray-600 mb-4">
+                        {searchTerm || filterRole !== 'all' || filterStatus !== 'all' 
+                          ? 'No users match your current filters' 
+                          : 'No users have registered yet'}
+                      </p>
+                      {!searchTerm && filterRole === 'all' && filterStatus === 'all' && (
+                        <button className="btn-primary">
+                          Invite First User
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
