@@ -1,84 +1,84 @@
-import React, { useState } from 'react';
-import { Search, Filter, Smartphone, Eye, Download, MapPin, Calendar, MoreVertical, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Search, Filter, Smartphone, Eye, Download, MapPin, Calendar, MoreVertical, X, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import QRCode from 'react-qr-code';
+import { getUserDevices, getDeviceDetails } from '../../services/userApi';
+
+// Define device and related types
+interface DeviceImpact {
+  waterSaved: number;
+  co2Reduced: number;
+  toxicPrevented: number;
+}
+
+interface DeviceValuation {
+  suggestion: string;
+  estimatedValue: number;
+  reason: string;
+}
+
+interface Device {
+  id: string;
+  name: string;
+  type: string;
+  brand: string;
+  model: string;
+  serialNumber: string;
+  status: string;
+  condition: string;
+  uploadDate: string;
+  processedDate: string | null;
+  qrCode: string;
+  valuation: DeviceValuation | null;
+  impact: DeviceImpact | null;
+  images: string[];
+}
 
 const MyDevices: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
-
-  // Mock data
-  const devices = [
-    {
-      id: '1',
-      name: 'iPhone 12 Pro',
-      type: 'smartphone',
-      brand: 'Apple',
-      model: 'iPhone 12 Pro',
-      serialNumber: 'A1B2C3D4E5',
-      status: 'recycled',
-      condition: 'good',
-      uploadDate: '2024-01-15',
-      processedDate: '2024-01-18',
-      qrCode: 'GC-DEV-001-2024',
-      valuation: {
-        suggestion: 'recycle',
-        estimatedValue: 0,
-        reason: 'Device is functional but outdated model'
-      },
-      impact: {
-        waterSaved: 520,
-        co2Reduced: 15.6,
-        toxicPrevented: 0.8
-      },
-      images: ['/api/placeholder/200/150']
-    },
-    {
-      id: '2',
-      name: 'MacBook Pro 2019',
-      type: 'laptop',
-      brand: 'Apple',
-      model: 'MacBook Pro 16"',
-      serialNumber: 'F5G6H7I8J9',
-      status: 'donated',
-      condition: 'excellent',
-      uploadDate: '2024-01-10',
-      processedDate: '2024-01-12',
-      qrCode: 'GC-DEV-002-2024',
-      valuation: {
-        suggestion: 'donate',
-        estimatedValue: 800,
-        reason: 'High-value device in excellent condition'
-      },
-      impact: {
-        waterSaved: 1200,
-        co2Reduced: 35.2,
-        toxicPrevented: 2.1
-      },
-      images: ['/api/placeholder/200/150']
-    },
-    {
-      id: '3',
-      name: 'iPad Air',
-      type: 'tablet',
-      brand: 'Apple',
-      model: 'iPad Air (4th gen)',
-      serialNumber: 'K9L8M7N6O5',
-      status: 'processing',
-      condition: 'good',
-      uploadDate: '2024-01-20',
-      processedDate: null,
-      qrCode: 'GC-DEV-003-2024',
-      valuation: {
-        suggestion: 'resell',
-        estimatedValue: 300,
-        reason: 'Good condition with resale value'
-      },
-      impact: null,
-      images: ['/api/placeholder/200/150']
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deviceDetail, setDeviceDetail] = useState<Device | null>(null);
+  
+  // Fetch user devices on component mount
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        setLoading(true);
+        const data = await getUserDevices();
+        setDevices(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching devices:', err);
+        setError('Failed to load devices. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDevices();
+  }, []);
+  
+  // Fetch device details when a device is selected
+  useEffect(() => {
+    if (selectedDevice) {
+      const fetchDeviceDetails = async () => {
+        try {
+          const data = await getDeviceDetails(selectedDevice);
+          setDeviceDetail(data);
+        } catch (err) {
+          console.error('Error fetching device details:', err);
+        }
+      };
+      
+      fetchDeviceDetails();
+    } else {
+      setDeviceDetail(null);
     }
-  ];
+  }, [selectedDevice]);
 
   const statusColors = {
     uploaded: 'bg-blue-100 text-blue-800',
@@ -242,13 +242,24 @@ const MyDevices: React.FC = () => {
       </div>
 
       {/* Devices Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredDevices.map((device) => (
-          <DeviceCard key={device.id} device={device} />
-        ))}
-      </div>
-
-      {filteredDevices.length === 0 && (
+      {loading ? (
+        <div className="text-center py-12">
+          <Smartphone className="w-16 h-16 text-neutral-300 mx-auto mb-4 animate-pulse" />
+          <h3 className="text-lg font-medium text-neutral-800 mb-2">Loading devices...</h3>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <AlertCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-neutral-800 mb-2">Error loading devices</h3>
+          <p className="text-neutral-600 mb-6">{error}</p>
+        </div>
+      ) : filteredDevices.length > 0 ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredDevices.map((device) => (
+            <DeviceCard key={device.id} device={device} />
+          ))}
+        </div>
+      ) : (
         <div className="text-center py-12">
           <Smartphone className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-neutral-800 mb-2">No devices found</h3>
@@ -319,20 +330,22 @@ const MyDevices: React.FC = () => {
                     </div>
 
                     {/* Valuation */}
-                    <div className="p-4 bg-blue-50 rounded-xl">
-                      <h3 className="font-medium text-blue-800 mb-2">AI Valuation</h3>
-                      <p className="text-sm text-blue-700 mb-2">
-                        <strong>Suggestion:</strong> {device.valuation.suggestion}
-                      </p>
-                      {device.valuation.estimatedValue > 0 && (
+                    {device.valuation && (
+                      <div className="p-4 bg-blue-50 rounded-xl">
+                        <h3 className="font-medium text-blue-800 mb-2">AI Valuation</h3>
                         <p className="text-sm text-blue-700 mb-2">
-                          <strong>Estimated Value:</strong> ${device.valuation.estimatedValue}
+                          <strong>Suggestion:</strong> {device.valuation.suggestion}
                         </p>
-                      )}
-                      <p className="text-sm text-blue-700">
-                        <strong>Reason:</strong> {device.valuation.reason}
-                      </p>
-                    </div>
+                        {device.valuation.estimatedValue > 0 && (
+                          <p className="text-sm text-blue-700 mb-2">
+                            <strong>Estimated Value:</strong> ${device.valuation.estimatedValue}
+                          </p>
+                        )}
+                        <p className="text-sm text-blue-700">
+                          <strong>Reason:</strong> {device.valuation.reason}
+                        </p>
+                      </div>
+                    )}
 
                     {/* Impact */}
                     {device.impact && (

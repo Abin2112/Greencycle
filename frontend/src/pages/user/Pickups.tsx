@@ -1,32 +1,42 @@
-import React from 'react';
-import { Calendar, Clock, MapPin, Package, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Calendar, Clock, MapPin, Package, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getUserPickups, schedulePickup } from '../../services/userApi';
+
+interface PickupItem {
+  id: number;
+  date: string;
+  time: string;
+  address: string;
+  status: string;
+  items: string[];
+  ngo: string;
+  pickupPerson: string;
+  phone: string;
+}
 
 const Pickups: React.FC = () => {
-  const pickups = [
-    {
-      id: 1,
-      date: '2024-01-25',
-      time: '10:00 AM - 12:00 PM',
-      address: '123 Main Street, Apt 4B',
-      status: 'scheduled',
-      items: ['iPhone 12', 'iPad Air'],
-      ngo: 'GreenTech Recyclers',
-      pickupPerson: 'John Smith',
-      phone: '+1 (555) 123-4567'
-    },
-    {
-      id: 2,
-      date: '2024-01-20',
-      time: '2:00 PM - 4:00 PM',
-      address: '456 Oak Avenue',
-      status: 'completed',
-      items: ['MacBook Pro'],
-      ngo: 'EcoCenter Foundation',
-      pickupPerson: 'Sarah Johnson',
-      phone: '+1 (555) 987-6543'
-    }
-  ];
+  const [pickups, setPickups] = useState<PickupItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchPickups = async () => {
+      try {
+        setLoading(true);
+        const data = await getUserPickups();
+        setPickups(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching pickups:', err);
+        setError('Failed to load pickup data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchPickups();
+  }, []);
 
   return (
     <motion.div
@@ -50,34 +60,46 @@ const Pickups: React.FC = () => {
       </div>
 
       <div className="space-y-6">
-        {pickups.map((pickup) => (
-          <div key={pickup.id} className="card">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center space-x-3">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  pickup.status === 'completed' ? 'bg-green-100' : 'bg-blue-100'
+        {loading ? (
+          <div className="text-center py-12">
+            <Calendar className="w-16 h-16 text-neutral-300 mx-auto mb-4 animate-pulse" />
+            <h3 className="text-lg font-medium text-neutral-800 mb-2">Loading pickups...</h3>
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <AlertCircle className="w-16 h-16 text-red-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-neutral-800 mb-2">Error loading pickups</h3>
+            <p className="text-neutral-600 mb-6">{error}</p>
+          </div>
+        ) : pickups.length > 0 ? (
+          pickups.map((pickup) => (
+            <div key={pickup.id} className="card">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    pickup.status === 'completed' ? 'bg-green-100' : 'bg-blue-100'
+                  }`}>
+                    {pickup.status === 'completed' ? (
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    ) : (
+                      <Calendar className="w-6 h-6 text-blue-600" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-neutral-800">
+                      Pickup #{pickup.id.toString().padStart(3, '0')}
+                    </h3>
+                    <p className="text-neutral-600">{pickup.ngo}</p>
+                  </div>
+                </div>
+                <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                  pickup.status === 'completed' 
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-blue-100 text-blue-800'
                 }`}>
-                  {pickup.status === 'completed' ? (
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                  ) : (
-                    <Calendar className="w-6 h-6 text-blue-600" />
-                  )}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-neutral-800">
-                    Pickup #{pickup.id.toString().padStart(3, '0')}
-                  </h3>
-                  <p className="text-neutral-600">{pickup.ngo}</p>
-                </div>
+                  {pickup.status}
+                </span>
               </div>
-              <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                pickup.status === 'completed' 
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-blue-100 text-blue-800'
-              }`}>
-                {pickup.status}
-              </span>
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div className="flex items-center space-x-2">
@@ -111,7 +133,20 @@ const Pickups: React.FC = () => {
               )}
             </div>
           </div>
-        ))}
+          ))
+        ) : (
+          <div className="text-center py-12">
+            <Calendar className="w-16 h-16 text-neutral-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-neutral-800 mb-2">No pickups scheduled</h3>
+            <p className="text-neutral-600 mb-6">
+              Schedule a pickup to recycle or donate your devices
+            </p>
+            <button className="btn-primary">
+              <Calendar className="w-5 h-5 mr-2" />
+              Schedule Pickup
+            </button>
+          </div>
+        )}
       </div>
     </motion.div>
   );

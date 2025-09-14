@@ -81,38 +81,52 @@ router.post("/admin/login", async (req, res) => {
 // User registration (Firebase + local DB)
 router.post("/register", async (req, res) => {
   try {
+    console.log("Register request body:", req.body);
     const { firebase_uid, email, name, phone, address, role = 'user' } = req.body;
 
-    if (!firebase_uid || !email || !name) {
+    // For development, allow registration without firebase_uid
+    const useFirebaseUid = firebase_uid || `temp-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+
+    if (!email || !name) {
       return res.status(400).json({
         success: false,
-        message: "Firebase UID, email and name are required"
+        message: "Email and name are required"
       });
     }
 
     // Check if user already exists
+    console.log("Checking if user exists:", email);
     const existingUser = await query(
-      'SELECT id FROM users WHERE firebase_uid = $1 OR email = $2',
-      [firebase_uid, email]
+      'SELECT id, firebase_uid, email, name, phone, address, role, points, level FROM users WHERE email = $1',
+      [email]
     );
 
     if (existingUser.rows.length > 0) {
-      return res.status(409).json({
-        success: false,
-        message: "User already exists"
+      console.log("User already exists:", existingUser.rows[0]);
+      // Instead of failing, return the existing user with a new token
+      const user = existingUser.rows[0];
+      const token = generateToken(user);
+      
+      return res.status(200).json({
+        success: true,
+        message: "User already exists, logged in",
+        user,
+        token
       });
     }
 
     // Create new user
+    console.log("Creating new user:", { email, name, role });
     const result = await query(
-      `INSERT INTO users (firebase_uid, email, name, phone, address, role, is_active, email_verified) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+      `INSERT INTO users (firebase_uid, email, name, phone, address, role, is_active, email_verified, points, level) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
        RETURNING id, firebase_uid, email, name, phone, address, role, points, level, created_at`,
-      [firebase_uid, email, name, phone, address, role, true, true]
+      [useFirebaseUid, email, name, phone, address, role, true, true, 0, 1]
     );
 
     const user = result.rows[0];
     const token = generateToken(user);
+    console.log("User registered:", user);
 
     res.status(201).json({
       success: true,
@@ -134,7 +148,8 @@ router.post("/register", async (req, res) => {
 // User login (Firebase + local DB)
 router.post("/login", async (req, res) => {
   try {
-    const { firebase_uid, email } = req.body;
+    console.log("Login request body:", req.body);
+    const { firebase_uid, email, password } = req.body;
 
     if (!firebase_uid && !email) {
       return res.status(400).json({
@@ -148,18 +163,49 @@ router.post("/login", async (req, res) => {
       ? 'SELECT id, firebase_uid, email, name, phone, address, role, points, level FROM users WHERE firebase_uid = $1 AND is_active = true'
       : 'SELECT id, firebase_uid, email, name, phone, address, role, points, level FROM users WHERE email = $1 AND is_active = true';
     
+    console.log("Executing query:", queryText, "with params:", [firebase_uid || email]);
     const result = await query(queryText, [firebase_uid || email]);
+    console.log("Query result:", result.rows);
 
     if (result.rows.length === 0) {
+      // For testing - if no user found, create one with this email
+      // This is just for development, remove in production
+      if (process.env.NODE_ENV === 'development' && email && !firebase_uid) {
+        console.log("Creating test user for:", email);
+        const fakeFirebaseUid = `test-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+        const name = email.split('@')[0];
+        
+        const createResult = await query(
+          `INSERT INTO users (firebase_uid, email, name, role, is_active, email_verified, points, level) 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+           RETURNING id, firebase_uid, email, name, phone, address, role, points, level`,
+          [fakeFirebaseUid, email, name, 'user', true, true, 0, 1]
+        );
+        
+        if (createResult.rows.length > 0) {
+          const newUser = createResult.rows[0];
+          const token = generateToken(newUser);
+          console.log("Created test user:", newUser);
+          
+          return res.json({
+            success: true,
+            message: "Test user created and logged in",
+            user: newUser,
+            token
+          });
+        }
+      }
+      
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found. Please register first."
       });
     }
 
     const user = result.rows[0];
     const token = generateToken(user);
 
+    console.log("User logged in:", user);
     res.json({
       success: true,
       message: "Login successful",

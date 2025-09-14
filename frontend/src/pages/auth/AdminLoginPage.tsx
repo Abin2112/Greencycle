@@ -25,7 +25,7 @@ const AdminLoginPage: React.FC = () => {
     try {
       setIsLoading(true);
 
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/admin/login`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/auth/admin/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -37,7 +37,8 @@ const AdminLoginPage: React.FC = () => {
 
       const result = await response.json();
       localStorage.setItem("token", result.token);
-      localStorage.setItem("role", result.role);
+      localStorage.setItem("role", result.user.role);
+      localStorage.setItem("user", JSON.stringify(result.user));
 
       navigate('/admin');
     } catch (error) {

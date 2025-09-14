@@ -22,7 +22,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  if (!currentUser) {
+  // Check if user is authenticated (either Firebase user or JWT token with user profile)
+  const isAuthenticated = currentUser || (userProfile && localStorage.getItem('token'));
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
@@ -34,7 +37,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         ngo: '/ngo',
         admin: '/admin'
       };
-      return <Navigate to={roleRoutes[userProfile.role]} replace />;
+      return <Navigate to={roleRoutes[userProfile.role as keyof typeof roleRoutes] || '/login'} replace />;
     }
   }
 

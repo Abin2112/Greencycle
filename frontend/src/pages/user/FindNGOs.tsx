@@ -1,14 +1,20 @@
-import React from 'react';
+/// <reference types="@types/google.maps" />
+
+import React, { useEffect, useRef } from 'react';
 import { MapPin, Navigation, Phone, Star, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const FindNGOs: React.FC = () => {
+  const mapRef = useRef<HTMLDivElement>(null);
+
   // Mock NGO data
   const ngos = [
     {
       id: 1,
       name: 'GreenTech Recyclers',
       address: '123 Environmental Way, Green City',
+      latitude: 37.7749,
+      longitude: -122.4194,
       distance: '2.3 km',
       rating: 4.8,
       services: ['Electronics', 'Batteries', 'Computers'],
@@ -20,6 +26,8 @@ const FindNGOs: React.FC = () => {
       id: 2,
       name: 'EcoCenter Foundation',
       address: '456 Sustainability Blvd, Eco Town',
+      latitude: 37.7849,
+      longitude: -122.4094,
       distance: '3.1 km',
       rating: 4.6,
       services: ['All Electronics', 'Pickup Service'],
@@ -28,6 +36,23 @@ const FindNGOs: React.FC = () => {
       verified: true
     }
   ];
+
+  useEffect(() => {
+    if (mapRef.current) {
+      const map = new google.maps.Map(mapRef.current, {
+        center: { lat: 37.7749, lng: -122.4194 },
+        zoom: 12
+      });
+
+      ngos.forEach((ngo) => {
+        new google.maps.Marker({
+          position: { lat: ngo.latitude, lng: ngo.longitude },
+          map,
+          title: ngo.name
+        });
+      });
+    }
+  }, [ngos]);
 
   return (
     <motion.div
@@ -44,15 +69,9 @@ const FindNGOs: React.FC = () => {
         </p>
       </div>
 
-      {/* Map Placeholder */}
+      {/* Google Map */}
       <div className="card">
-        <div className="h-64 bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl flex items-center justify-center">
-          <div className="text-center">
-            <MapPin className="w-16 h-16 text-primary-400 mx-auto mb-4" />
-            <p className="text-neutral-600">Interactive Map Integration</p>
-            <p className="text-sm text-neutral-500">Google Maps API integration coming soon</p>
-          </div>
-        </div>
+        <div ref={mapRef} className="h-64 rounded-xl" />
       </div>
 
       {/* NGO List */}
