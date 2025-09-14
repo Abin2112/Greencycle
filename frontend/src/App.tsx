@@ -67,46 +67,49 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/register/user" element={<RegisterPage />} />
             <Route path="/register/ngo" element={<NGORegisterPage />} />
-            <Route path="/register/admin" element={<AdminRegisterPage />} />              {/* User Portal Routes */}
-              <Route path="/user" element={
-                <ProtectedRoute allowedRoles={['user']}>
-                  <UserLayout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<UserDashboard />} />
-                <Route path="upload" element={<DeviceUpload />} />
-                <Route path="devices" element={<MyDevices />} />
-                <Route path="ngos" element={<FindNGOs />} />
-                <Route path="pickups" element={<Pickups />} />
-                <Route path="impact" element={<ImpactDashboard />} />
-                <Route path="gamification" element={<Gamification />} />
-              </Route>
+            <Route path="/register/admin" element={<AdminRegisterPage />} />
               
-              {/* NGO Portal Routes */}
-              <Route path="/ngo" element={
-                <ProtectedRoute allowedRoles={['ngo']}>
-                  <NGOLayout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<NGODashboard />} />
-                <Route path="requests" element={<RequestManagement />} />
-                <Route path="scanner" element={<QRScanner />} />
-                <Route path="profile" element={<NGOProfile />} />
-                <Route path="analytics" element={<NGOAnalytics />} />
-              </Route>
-              
-              {/* Admin Portal Routes */}
-              <Route path="/admin" element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminLayout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<AdminDashboard />} />
-                <Route path="analytics" element={<AdminAnalytics />} />
-                <Route path="users" element={<UserManagement />} />
-                <Route path="ngos" element={<NGOManagement />} />
-                <Route path="settings" element={<AdminSettings />} />
-              </Route>
+            {/* User Portal Routes */}
+            <Route path="/user" element={
+              <ProtectedRoute allowedRoles={['user']}>
+                <UserLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<Navigate to="/user/dashboard" replace />} />
+              <Route path="dashboard" element={<UserDashboard />} />
+              <Route path="upload" element={<DeviceUpload />} />
+              <Route path="devices" element={<MyDevices />} />
+              <Route path="ngos" element={<FindNGOs />} />
+              <Route path="pickups" element={<Pickups />} />
+              <Route path="impact" element={<ImpactDashboard />} />
+              <Route path="gamification" element={<Gamification />} />
+            </Route>
+            
+            {/* NGO Portal Routes */}
+            <Route path="/ngo" element={
+              <ProtectedRoute allowedRoles={['ngo']}>
+                <NGOLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<NGODashboard />} />
+              <Route path="requests" element={<RequestManagement />} />
+              <Route path="scanner" element={<QRScanner />} />
+              <Route path="profile" element={<NGOProfile />} />
+              <Route path="analytics" element={<NGOAnalytics />} />
+            </Route>
+            
+            {/* Admin Portal Routes */}
+            <Route path="/admin" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }>
+              <Route index element={<AdminDashboard />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+              <Route path="users" element={<UserManagement />} />
+              <Route path="ngos" element={<NGOManagement />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
               
               {/* Default redirect */}
               <Route path="/" element={<Navigate to="/login" replace />} />

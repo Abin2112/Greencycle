@@ -22,8 +22,10 @@ const UserLoginPage: React.FC = () => {
   const onSubmit = async (data: LoginFormData) => {
     try {
       setIsLoading(true);
+      console.log('Attempting to login with:', data.email);
       await login(data.email, data.password, 'user');
-      navigate('/user');
+      console.log('Login successful, redirecting to /user dashboard');
+      navigate('/user/dashboard');
     } catch (error) {
       console.error('Login error:', error);
     } finally {
@@ -34,8 +36,10 @@ const UserLoginPage: React.FC = () => {
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
+      console.log('Attempting to login with Google');
       await loginWithGoogle('user');
-      navigate('/user');
+      console.log('Google login successful, redirecting to /user/dashboard');
+      navigate('/user/dashboard');
     } catch (error) {
       console.error('Google login error:', error);
     } finally {

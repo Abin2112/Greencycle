@@ -63,7 +63,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       // Now authenticate with backend
-      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/login`, {
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -116,7 +116,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const fakeFirebaseUid = `test-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
         
         // Register user in backend
-        const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/register`, {
+        const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
@@ -177,7 +177,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Register or login Google user in backend
-      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/register`, {
+      const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -197,7 +197,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (res.status === 409) {
           console.log("User already exists, trying login instead");
           
-          const loginRes = await fetch(`${process.env.REACT_APP_API_BASE_URL}/login`, {
+          const loginRes = await fetch(`${process.env.REACT_APP_API_BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -292,7 +292,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
       setCurrentUser(user);
       // If no Firebase user, check localStorage for JWT user
       if (!user) {
