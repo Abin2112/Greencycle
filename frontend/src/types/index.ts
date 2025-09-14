@@ -286,4 +286,28 @@ export interface Notification {
   createdAt: string;
 }
 
+// Dashboard Types
+export interface DashboardData {
+  devicesUploaded: number;
+  totalImpact: {
+    waterSaved: number;
+    co2Reduced: number;
+    toxicPrevented: number;
+  };
+  recentDevices: Device[];
+  upcomingPickups: Pickup[];
+}
+
+export interface DashboardResponse {
+  devices: Device[];
+  pickups: Pickup[];
+  impact: {
+    totalWaterSaved: number;
+    totalCo2Reduced: number;
+    totalToxicPrevented: number;
+    totalDevicesProcessed: number;
+    totalPoints: number;
+  };
+}
+
 export default {};

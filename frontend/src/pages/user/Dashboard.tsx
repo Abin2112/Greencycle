@@ -17,11 +17,12 @@ import {
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { getDashboardData, getUserAchievements } from '../../services/userApi';
+import { DashboardData, DashboardResponse } from '../../types';
 
 const UserDashboard: React.FC = () => {
   const { userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [dashboardData, setDashboardData] = useState({
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
     devicesUploaded: 0,
     totalImpact: {
       waterSaved: 0,
@@ -31,19 +32,52 @@ const UserDashboard: React.FC = () => {
     recentDevices: [],
     upcomingPickups: []
   });
-  const [achievements, setAchievements] = useState([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
   
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
         const data = await getDashboardData();
-        const achievementsData = await getUserAchievements();
         
-        setDashboardData(data);
-        setAchievements(achievementsData.slice(0, 3)); // Get the first 3 achievements
+        // Transform the data to match our expected structure
+        const transformedData: DashboardData = {
+          devicesUploaded: data.devices?.length || 0,
+          totalImpact: {
+            waterSaved: data.impact?.totalWaterSaved || 0,
+            co2Reduced: data.impact?.totalCo2Reduced || 0,
+            toxicPrevented: data.impact?.totalToxicPrevented || 0
+          },
+          recentDevices: data.devices?.slice(0, 3) || [],
+          upcomingPickups: data.pickups?.filter((pickup: any) => 
+            pickup.status === 'scheduled' || pickup.status === 'confirmed'
+          ).slice(0, 3) || []
+        };
+        
+        setDashboardData(transformedData);
+        
+        // Fetch achievements separately with error handling
+        try {
+          const achievementsData = await getUserAchievements();
+          setAchievements(achievementsData?.data?.slice(0, 3) || achievementsData?.slice(0, 3) || []);
+        } catch (achievementError) {
+          console.error('Error fetching achievements:', achievementError);
+          setAchievements([]);
+        }
+        
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        // Set default empty data in case of error
+        setDashboardData({
+          devicesUploaded: 0,
+          totalImpact: {
+            waterSaved: 0,
+            co2Reduced: 0,
+            toxicPrevented: 0
+          },
+          recentDevices: [],
+          upcomingPickups: []
+        });
       } finally {
         setLoading(false);
       }

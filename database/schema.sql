@@ -1,53 +1,91 @@
 
+-- GreenCycle Database Schema
+-- Smart E-waste Management Platform
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Users table
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     firebase_uid VARCHAR(255) UNIQUE,
-    name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'ngo', 'admin')),
-    points INTEGER DEFAULT 0,
-    badges TEXT[], 
-    profile_image TEXT,
+    name VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     address TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'ngo', 'admin')),
+    points INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1,
+    profile_image_url TEXT,
+    is_active BOOLEAN DEFAULT true,
+    email_verified BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- NGOs table
 CREATE TABLE ngos (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
-    description TEXT,
+    registration_number VARCHAR(100) UNIQUE,
     address TEXT NOT NULL,
     latitude DECIMAL(10, 8),
     longitude DECIMAL(11, 8),
-    services TEXT[],
-    contact_info JSONB, 
-    operating_hours JSONB,
-    verified BOOLEAN DEFAULT FALSE,
+    city VARCHAR(100),
+    state VARCHAR(100),
+    postal_code VARCHAR(20),
+    contact_person VARCHAR(255),
+    contact_email VARCHAR(255),
+    contact_phone VARCHAR(20),
+    website_url TEXT,
+    services TEXT[], -- Array of services offered
+    operating_hours JSONB, -- Store operating hours as JSON
+    capacity_per_day INTEGER DEFAULT 10,
     rating DECIMAL(3, 2) DEFAULT 0.0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    total_reviews INTEGER DEFAULT 0,
+    verification_status VARCHAR(20) DEFAULT 'pending' CHECK (verification_status IN ('pending', 'verified', 'rejected')),
+    license_document_url TEXT,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Device types and eco-impact formulas
+CREATE TABLE eco_impact_formulas (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    device_type VARCHAR(50) NOT NULL UNIQUE,
+    water_saved_per_kg DECIMAL(10, 2) DEFAULT 500.0, -- Liters per kg
+    co2_saved_per_kg DECIMAL(10, 2) DEFAULT 2.5, -- kg CO2 per kg device
+    toxic_waste_prevented_per_kg DECIMAL(10, 2) DEFAULT 0.1, -- kg toxic waste per kg device
+    points_per_kg INTEGER DEFAULT 10,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Devices table
 CREATE TABLE devices (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    type VARCHAR(50) NOT NULL, 
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    ngo_id UUID REFERENCES ngos(id) ON DELETE SET NULL,
+    device_type VARCHAR(50) NOT NULL,
     brand VARCHAR(100),
-    model VARCHAR(255),
+    model VARCHAR(100),
     serial_number VARCHAR(255),
-    condition VARCHAR(20) CHECK (condition IN ('excellent', 'good', 'fair', 'poor')),
-    status VARCHAR(20) DEFAULT 'uploaded' CHECK (status IN ('uploaded', 'pending_pickup', 'picked_up', 'received', 'processing', 'refurbished', 'donated', 'recycled')),
-    valuation JSONB, 
-    weight DECIMAL(8, 3), 
-    images TEXT[], 
-    qr_code TEXT UNIQUE,
-    ai_detection_result JSONB, 
-    ocr_data JSONB, 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    estimated_value DECIMAL(10, 2),
+    condition VARCHAR(20) CHECK (condition IN ('excellent', 'good', 'fair', 'poor', 'broken')),
+    weight_kg DECIMAL(8, 3),
+    status VARCHAR(20) DEFAULT 'uploaded' CHECK (status IN ('uploaded', 'pickup_scheduled', 'picked_up', 'received', 'processing', 'refurbished', 'donated', 'recycled', 'disposed')),
+    recommendation VARCHAR(20) CHECK (recommendation IN ('donate', 'recycle', 'resell', 'repair')),
+    qr_code VARCHAR(255) UNIQUE,
+    image_urls TEXT[], -- Array of image URLs
+    ai_confidence_score DECIMAL(5, 4), -- 0.0000 to 1.0000
+    ocr_data JSONB, -- Store extracted text/data from OCR
+    description TEXT,
+    pickup_address TEXT,
+    pickup_instructions TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE pickups (
